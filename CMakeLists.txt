@@ -36,7 +36,8 @@ if(FH_FUZZ)
 endif()
 
 add_library(fh_core STATIC
-  src/level_totals.cpp)
+  src/level_totals.cpp
+  src/order_book.cpp)
 target_include_directories(fh_core PUBLIC include)
 target_link_libraries(fh_core PUBLIC fh_warnings)
 target_compile_definitions(fh_core PUBLIC FH_SEEDED_BUG=${FH_SEEDED_BUG})

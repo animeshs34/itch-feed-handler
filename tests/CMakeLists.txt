@@ -12,7 +12,9 @@ add_executable(fh_tests
   test_events.cpp
   test_prng.cpp
   test_level_totals.cpp
-  test_oracle.cpp)
+  test_order_book.cpp
+  test_oracle.cpp
+  test_differential.cpp)
 target_include_directories(fh_tests PRIVATE support)
 target_link_libraries(fh_tests PRIVATE fh_core Catch2::Catch2WithMain)
 
