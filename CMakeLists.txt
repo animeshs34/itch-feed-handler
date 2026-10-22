@@ -39,7 +39,8 @@ add_library(fh_core STATIC
   src/level_totals.cpp
   src/order_book.cpp
   src/state_encode.cpp
-  src/state_decode.cpp)
+  src/state_decode.cpp
+  src/arbiter.cpp)
 target_include_directories(fh_core PUBLIC include)
 target_link_libraries(fh_core PUBLIC fh_warnings)
 target_compile_definitions(fh_core PUBLIC FH_SEEDED_BUG=${FH_SEEDED_BUG})
