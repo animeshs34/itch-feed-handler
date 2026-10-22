@@ -14,7 +14,11 @@ add_executable(fh_tests
   test_level_totals.cpp
   test_order_book.cpp
   test_oracle.cpp
-  test_differential.cpp)
+  test_differential.cpp
+  test_state_encode.cpp
+  test_state_decode.cpp
+  test_checksum.cpp
+  test_properties.cpp)
 target_include_directories(fh_tests PRIVATE support)
 target_link_libraries(fh_tests PRIVATE fh_core Catch2::Catch2WithMain)
 
