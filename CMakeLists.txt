@@ -42,7 +42,10 @@ add_library(fh_core STATIC
   src/state_decode.cpp
   src/arbiter.cpp
   src/sequencer.cpp
-  src/line_monitor.cpp)
+  src/line_monitor.cpp
+  src/snapshot_reassembler.cpp
+  src/instrument_state.cpp
+  src/instrument_set.cpp)
 target_include_directories(fh_core PUBLIC include)
 target_link_libraries(fh_core PUBLIC fh_warnings)
 target_compile_definitions(fh_core PUBLIC FH_SEEDED_BUG=${FH_SEEDED_BUG})
