@@ -19,7 +19,11 @@ add_executable(fh_tests
   test_state_decode.cpp
   test_checksum.cpp
   test_properties.cpp
-  test_arbiter.cpp)
+  test_messages.cpp
+  test_arbiter.cpp
+  test_sequencer_order.cpp
+  test_sequencer_gaps.cpp
+  test_sequencer_tail.cpp)
 target_include_directories(fh_tests PRIVATE support)
 target_link_libraries(fh_tests PRIVATE fh_core Catch2::Catch2WithMain)
 
