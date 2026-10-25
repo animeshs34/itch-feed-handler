@@ -27,7 +27,11 @@ add_executable(fh_tests
   test_line_monitor.cpp
   test_snapshot_reassembler.cpp
   test_instrument_state.cpp
-  test_instrument_set.cpp)
+  test_instrument_set.cpp
+  test_core_basic.cpp
+  test_core_scenarios.cpp
+  test_core_random.cpp
+  test_core_late_join.cpp)
 target_include_directories(fh_tests PRIVATE support)
 target_link_libraries(fh_tests PRIVATE fh_core Catch2::Catch2WithMain)
 
