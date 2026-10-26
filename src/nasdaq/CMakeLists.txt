@@ -4,5 +4,7 @@ add_library(fh_nasdaq STATIC
   itch_decoder.cpp
   itch_encoder.cpp
   moldudp64.cpp
-  snapshot_decoder.cpp)
+  mold_encoder.cpp
+  snapshot_decoder.cpp
+  handler.cpp)
 target_link_libraries(fh_nasdaq PUBLIC fh_core)

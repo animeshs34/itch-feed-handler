@@ -36,6 +36,12 @@ add_executable(fh_tests
   test_itch_encoder.cpp
   test_itch_decoder.cpp
   test_itch_roundtrip.cpp
+  test_mold_encoder.cpp
+  test_moldudp64.cpp
+  test_snapshot_decoder.cpp
+  test_handler.cpp
+  test_nasdaq_equivalence.cpp
+  test_nasdaq_damaged.cpp
   test_binary_file.cpp
   test_core_late_join.cpp)
 target_include_directories(fh_tests PRIVATE support)
