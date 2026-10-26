@@ -60,6 +60,7 @@ add_library(fh_testkit INTERFACE)
 target_include_directories(fh_testkit INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/tests/support)
 target_link_libraries(fh_testkit INTERFACE fh_core)
 
+add_subdirectory(src/sim)
 
 if(FH_BUILD_TESTS)
   enable_testing()
