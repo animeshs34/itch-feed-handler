@@ -31,9 +31,15 @@ add_executable(fh_tests
   test_core_basic.cpp
   test_core_scenarios.cpp
   test_core_random.cpp
+  test_be_reader.cpp
+  test_itch_layout.cpp
+  test_itch_encoder.cpp
+  test_itch_decoder.cpp
+  test_itch_roundtrip.cpp
+  test_binary_file.cpp
   test_core_late_join.cpp)
 target_include_directories(fh_tests PRIVATE support)
-target_link_libraries(fh_tests PRIVATE fh_core Catch2::Catch2WithMain)
+target_link_libraries(fh_tests PRIVATE fh_core fh_nasdaq Catch2::Catch2WithMain)
 
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(Catch)

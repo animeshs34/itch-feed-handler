@@ -51,6 +51,7 @@ target_include_directories(fh_core PUBLIC include)
 target_link_libraries(fh_core PUBLIC fh_warnings)
 target_compile_definitions(fh_core PUBLIC FH_SEEDED_BUG=${FH_SEEDED_BUG})
 
+add_subdirectory(src/nasdaq)
 
 # The test helpers (random numbers, the oracle, the consumer model) are plain headers.
 # The simulator uses them too, so they get a target of their own instead of being
