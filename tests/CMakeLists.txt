@@ -43,6 +43,7 @@ add_executable(fh_tests
   test_nasdaq_equivalence.cpp
   test_nasdaq_damaged.cpp
   test_binary_file.cpp
+  test_sim_recorded.cpp
   test_sim_consistency.cpp
   test_sim_ground_truth.cpp
   test_sim_day.cpp
@@ -53,7 +54,14 @@ add_executable(fh_tests
   test_sim_main_faults.cpp
   test_sim_snapshot_faults.cpp
   test_sim_scenario.cpp
-  test_core_late_join.cpp)
+  test_sim_checker.cpp
+  test_sim_sweep.cpp
+  test_core_late_join.cpp
+  test_sim_trace_io.cpp
+  test_sim_shrink.cpp
+  test_sim_coverage.cpp
+  test_sim_metamorphic.cpp
+  test_sim_campaign.cpp)
 target_include_directories(fh_tests PRIVATE support)
 target_link_libraries(fh_tests PRIVATE fh_core fh_nasdaq fh_sim Catch2::Catch2WithMain)
 
