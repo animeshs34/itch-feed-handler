@@ -48,6 +48,11 @@ add_executable(fh_tests
   test_sim_day.cpp
   test_sim_wire.cpp
   test_sim_snapshots.cpp
+  test_sim_faults.cpp
+  test_sim_delivery.cpp
+  test_sim_main_faults.cpp
+  test_sim_snapshot_faults.cpp
+  test_sim_scenario.cpp
   test_core_late_join.cpp)
 target_include_directories(fh_tests PRIVATE support)
 target_link_libraries(fh_tests PRIVATE fh_core fh_nasdaq fh_sim Catch2::Catch2WithMain)
