@@ -70,6 +70,7 @@ if(FH_BUILD_TESTS)
 endif()
 
 if(FH_BUILD_TOOLS)
+  add_subdirectory(tools)
 endif()
 if(FH_BUILD_TESTS)
   add_subdirectory(tests)
