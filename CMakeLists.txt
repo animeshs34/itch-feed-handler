@@ -62,6 +62,7 @@ target_link_libraries(fh_testkit INTERFACE fh_core)
 
 add_subdirectory(src/sim)
 add_subdirectory(src/net)
+add_subdirectory(src/live)
 
 if(FH_BUILD_TESTS)
   enable_testing()

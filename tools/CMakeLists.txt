@@ -47,6 +47,23 @@ set_tests_properties(fh_inspect_accepts_the_day fh_inspect_refuses_the_incomplet
                      fh_campaign_runs_on_a_recorded_day fh_campaign_refuses_the_incomplete_day
                      PROPERTIES FIXTURES_REQUIRED sample_files)
 
+add_executable(fh_send
+  fh_send.cpp)
+target_link_libraries(fh_send PRIVATE fh_live)
+
+# The library is already called fh_live, so the executable target has another name and
+# the same file name on disk.
+add_executable(fh_live_tool
+  fh_live.cpp)
+target_link_libraries(fh_live_tool PRIVATE fh_live)
+set_target_properties(fh_live_tool PROPERTIES OUTPUT_NAME fh_live)
+
 add_executable(fh_mktrace
   fh_mktrace.cpp)
 target_link_libraries(fh_mktrace PRIVATE fh_sim)
+
+# Two real processes over real sockets: fh_live listens, fh_send plays a trace, and the
+# trace fh_live recorded must pass the same checks the trace it was sent does.
+add_test(NAME loopback_tools_agree
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/loopback_check.sh ${CMAKE_CURRENT_BINARY_DIR})
+set_tests_properties(loopback_tools_agree PROPERTIES TIMEOUT 60)

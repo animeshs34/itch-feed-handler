@@ -48,6 +48,7 @@ add_executable(fh_tests
   test_net_clock.cpp
   test_net_udp.cpp
   test_net_pump.cpp
+  test_live_loopback.cpp
   test_sim_ground_truth.cpp
   test_sim_day.cpp
   test_sim_wire.cpp
@@ -66,7 +67,7 @@ add_executable(fh_tests
   test_sim_metamorphic.cpp
   test_sim_campaign.cpp)
 target_include_directories(fh_tests PRIVATE support)
-target_link_libraries(fh_tests PRIVATE fh_core fh_nasdaq fh_sim fh_net Catch2::Catch2WithMain)
+target_link_libraries(fh_tests PRIVATE fh_core fh_nasdaq fh_sim fh_net fh_live Catch2::Catch2WithMain)
 
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(Catch)
