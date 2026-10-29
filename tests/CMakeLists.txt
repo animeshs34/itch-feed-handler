@@ -82,4 +82,5 @@ include(Catch)
 catch_discover_tests(fh_tests)
 
 if(FH_FUZZ)
+  add_subdirectory(fuzz)
 endif()
