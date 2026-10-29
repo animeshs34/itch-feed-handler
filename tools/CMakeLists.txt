@@ -67,3 +67,19 @@ target_link_libraries(fh_mktrace PRIVATE fh_sim)
 add_test(NAME loopback_tools_agree
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/loopback_check.sh ${CMAKE_CURRENT_BINARY_DIR})
 set_tests_properties(loopback_tools_agree PROPERTIES TIMEOUT 60)
+
+add_executable(fh_bench_tool
+  fh_bench.cpp)
+target_link_libraries(fh_bench_tool PRIVATE fh_bench)
+set_target_properties(fh_bench_tool PROPERTIES OUTPUT_NAME fh_bench)
+
+# Smoke tests: the benchmark tool runs, prints its environment, and refuses nonsense. The
+# numbers it prints are for a Release build on a quiet machine, not for a test.
+add_test(NAME fh_bench_runs_a_short_closed_loop
+         COMMAND fh_bench closed --events 20000 --repeats 1)
+add_test(NAME fh_bench_measures_recovery
+         COMMAND fh_bench recovery --tier moderate --scenarios 20)
+add_test(NAME fh_bench_prints_the_environment COMMAND fh_bench env)
+set_tests_properties(fh_bench_prints_the_environment PROPERTIES PASS_REGULAR_EXPRESSION "environment:")
+add_test(NAME fh_bench_refuses_a_bad_command COMMAND fh_bench nonsense)
+set_tests_properties(fh_bench_refuses_a_bad_command PROPERTIES WILL_FAIL TRUE)
