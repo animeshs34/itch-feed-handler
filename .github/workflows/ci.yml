@@ -1,0 +1,114 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 3 * * *"   # nightly: the slow checks (seeded bugs, longer fuzz)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Same as the Dockerfile: this one ASan check makes every call far slower.
+  ASAN_OPTIONS: detect_stack_use_after_return=0
+  UBSAN_OPTIONS: print_stacktrace=1
+
+jobs:
+  # Correctness: build and run every test, the way `scripts/docker-test.sh` does.
+  test:
+    name: test (${{ matrix.cxx }}, ${{ matrix.build_type }}, sanitize=${{ matrix.sanitize }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { cxx: g++,     build_type: Debug,   sanitize: "OFF" }
+          - { cxx: clang++, build_type: Debug,   sanitize: "OFF" }
+          - { cxx: g++,     build_type: Debug,   sanitize: "ON" }
+          - { cxx: g++,     build_type: Release, sanitize: "OFF" }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build clang libclang-rt-18-dev
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DFH_SANITIZE=${{ matrix.sanitize }}
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure -j"$(nproc)"
+
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends clang-format
+      - name: Check formatting
+        run: find include src tests tools -name '*.hpp' -o -name '*.cpp' | xargs clang-format --dry-run --Werror
+
+  # Short fuzz run on every change; the nightly run goes longer.
+  fuzz:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fuzz
+        run: >
+          docker build --target fuzz
+          --build-arg FUZZ_SECONDS=${{ github.event_name == 'schedule' && '600' || '60' }} .
+
+  # Checks the checker: the campaign must fail on every deliberately seeded defect.
+  # Builds the handler seven times, so it runs on main and nightly, not on every PR.
+  seeded-bugs:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build
+      - name: Every seeded bug is caught
+        run: bash scripts/check_seeded_bugs.sh "$PWD" "$RUNNER_TEMP/seeded" 300
+
+  # Performance regression gate. Hosted runners are shared, noisy VMs, so absolute latency
+  # means nothing here. Two things are compared between the base branch and this change:
+  #   1. instruction count under callgrind: deterministic, so it is the hard gate;
+  #   2. throughput, base and head run alternately on the same machine: ratio only,
+  #      reported as a warning because the machine can still be noisy.
+  # Real latency numbers need a dedicated bare-metal machine; see docs in scripts/.
+  perf-regression:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ninja-build valgrind
+      - name: Build base and head (Release)
+        run: |
+          git worktree add ../base "origin/${{ github.base_ref }}"
+          for tree in ../base .; do
+            cmake -S "$tree" -B "$tree/build-perf" -G Ninja -DCMAKE_BUILD_TYPE=Release
+            cmake --build "$tree/build-perf" --target fh_bench_tool
+          done
+      - name: Instruction count (gate)
+        run: >
+          bash scripts/bench_instructions.sh
+          ../base/build-perf/tools/fh_bench build-perf/tools/fh_bench 2
+      - name: Throughput ratio (warning only)
+        continue-on-error: true
+        run: >
+          bash scripts/bench_compare.sh
+          ../base/build-perf/tools/fh_bench build-perf/tools/fh_bench 5 300000 10
