@@ -7,6 +7,7 @@
 #include <optional>
 
 #include "fh/events.hpp"
+#include "fh/flat_map.hpp"
 #include "fh/level_totals.hpp"
 #include "fh/types.hpp"
 
@@ -63,15 +64,21 @@ class InstrumentBook {
   // nullopt if any order has zero shares or a level total would overflow.
   [[nodiscard]] static std::optional<InstrumentBook> from_orders(std::map<OrderId, Order> orders);
 
-  // Live orders sorted by order id.
-  [[nodiscard]] const std::map<OrderId, Order>& orders() const noexcept { return orders_; }
+  // Live orders sorted by order id. Built on request, so keep it off the hot path.
+  [[nodiscard]] std::map<OrderId, Order> orders() const;
 
   // Price-level totals worked out from the orders.
   [[nodiscard]] const LevelTotals& levels() const noexcept { return levels_; }
 
   // Two books are equal when their orders are equal; the levels follow.
   friend bool operator==(const InstrumentBook& a, const InstrumentBook& b) {
-    return a.orders_ == b.orders_;
+    if (a.orders_.size() != b.orders_.size()) return false;
+    bool same = true;
+    a.orders_.for_each([&](OrderId id, const Order& order) {
+      const Order* other = b.orders_.find(id);
+      if (other == nullptr || !(*other == order)) same = false;
+    });
+    return same;
   }
 
  private:
@@ -80,7 +87,11 @@ class InstrumentBook {
   [[nodiscard]] ApplyResult apply_delete(const BookEvent& event);
   [[nodiscard]] ApplyResult apply_replace(const BookEvent& event);
 
-  std::map<OrderId, Order> orders_;
+  struct IdHash {
+    std::uint64_t operator()(OrderId id) const noexcept { return mix64(id); }
+  };
+
+  FlatMap<OrderId, Order, IdHash> orders_;
   LevelTotals levels_;
 };
 

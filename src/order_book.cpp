@@ -40,7 +40,7 @@ ApplyResult InstrumentBook::apply_add(const BookEvent& event) {
   if (!levels_.can_add(key, event.shares)) return failure(ApplyError::LevelOverflow);
 
   // Every check has passed; from here on nothing can fail.
-  orders_.emplace(event.order, Order{event.side, event.price, event.shares});
+  orders_.insert(event.order, Order{event.side, event.price, event.shares});
   levels_.add(key, event.shares);
 
   ApplyResult result;
@@ -51,15 +51,15 @@ ApplyResult InstrumentBook::apply_add(const BookEvent& event) {
 
 ApplyResult InstrumentBook::apply_reduce(const BookEvent& event) {
   if (event.shares == 0) return failure(ApplyError::ZeroShares);
-  const auto it = orders_.find(event.order);
-  if (it == orders_.end()) return failure(ApplyError::UnknownOrder);
-  if (event.shares > it->second.shares) return failure(ApplyError::ReduceTooLarge);
+  Order* order = orders_.find(event.order);
+  if (order == nullptr) return failure(ApplyError::UnknownOrder);
+  if (event.shares > order->shares) return failure(ApplyError::ReduceTooLarge);
 
-  const LevelKey key{it->second.side, it->second.price};
+  const LevelKey key{order->side, order->price};
   levels_.sub(key, event.shares);
-  it->second.shares -= event.shares;
-  if (it->second.shares == 0 && !FH_BUG(6)) {
-    orders_.erase(it);  // a fully used-up order is dead (ITCH 5.0, section 1.4)
+  order->shares -= event.shares;
+  if (order->shares == 0 && !FH_BUG(6)) {
+    orders_.erase(event.order);  // a fully used-up order is dead (ITCH 5.0, section 1.4)
   }
 
   ApplyResult result;
@@ -69,12 +69,12 @@ ApplyResult InstrumentBook::apply_reduce(const BookEvent& event) {
 }
 
 ApplyResult InstrumentBook::apply_delete(const BookEvent& event) {
-  const auto it = orders_.find(event.order);
-  if (it == orders_.end()) return failure(ApplyError::UnknownOrder);
+  const Order* order = orders_.find(event.order);
+  if (order == nullptr) return failure(ApplyError::UnknownOrder);
 
-  const LevelKey key{it->second.side, it->second.price};
-  levels_.sub(key, it->second.shares);
-  orders_.erase(it);
+  const LevelKey key{order->side, order->price};
+  levels_.sub(key, order->shares);
+  orders_.erase(event.order);
 
   ApplyResult result;
   result.touched[0] = TouchedLevel{key, levels_.total(key)};
@@ -84,13 +84,13 @@ ApplyResult InstrumentBook::apply_delete(const BookEvent& event) {
 
 ApplyResult InstrumentBook::apply_replace(const BookEvent& event) {
   if (event.shares == 0) return failure(ApplyError::ZeroShares);
-  const auto it = orders_.find(event.order);
-  if (it == orders_.end()) return failure(ApplyError::UnknownOrder);
+  const Order* found = orders_.find(event.order);
+  if (found == nullptr) return failure(ApplyError::UnknownOrder);
   // Checked against the table before the old order is removed, so replacing an
   // order with its own id is rejected rather than silently allowed.
   if (orders_.contains(event.new_order)) return failure(ApplyError::NewOrderExists);
 
-  const Order old_order = it->second;
+  const Order old_order = *found;
   const LevelKey old_key{old_order.side, old_order.price};
   const LevelKey new_key{old_order.side, event.price};
 
@@ -101,8 +101,8 @@ ApplyResult InstrumentBook::apply_replace(const BookEvent& event) {
   }
 
   levels_.sub(old_key, old_order.shares);
-  orders_.erase(it);
-  orders_.emplace(event.new_order, Order{old_order.side, event.price, event.shares});
+  orders_.erase(event.order);
+  orders_.insert(event.new_order, Order{old_order.side, event.price, event.shares});
   levels_.add(new_key, event.shares);
 
   ApplyResult result;
@@ -125,8 +125,14 @@ std::optional<InstrumentBook> InstrumentBook::from_orders(std::map<OrderId, Orde
     if (!book.levels_.can_add(key, order.shares)) return std::nullopt;
     book.levels_.add(key, order.shares);
   }
-  book.orders_ = std::move(orders);
+  for (const auto& [id, order] : orders) book.orders_.insert(id, order);
   return book;
+}
+
+std::map<OrderId, Order> InstrumentBook::orders() const {
+  std::map<OrderId, Order> sorted;
+  orders_.for_each([&](OrderId id, const Order& order) { sorted.emplace(id, order); });
+  return sorted;
 }
 
 }  // namespace fh

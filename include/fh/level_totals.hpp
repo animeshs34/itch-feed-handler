@@ -3,6 +3,7 @@
 
 #include <map>
 
+#include "fh/flat_map.hpp"
 #include "fh/types.hpp"
 
 namespace fh {
@@ -34,11 +35,17 @@ class LevelTotals {
   // Precondition: total(key) >= shares and shares > 0.
   void sub(const LevelKey& key, Shares shares);
 
-  // Every level, sorted by (side, price).
-  [[nodiscard]] const std::map<LevelKey, Shares>& all() const noexcept { return totals_; }
+  // Every level, sorted by (side, price). Built on request, so keep it off the hot path.
+  [[nodiscard]] std::map<LevelKey, Shares> all() const;
 
  private:
-  std::map<LevelKey, Shares> totals_;
+  struct KeyHash {
+    std::uint64_t operator()(const LevelKey& key) const noexcept {
+      return mix64(static_cast<std::uint64_t>(key.price) * 2 + (key.side == Side::Sell ? 1U : 0U));
+    }
+  };
+
+  FlatMap<LevelKey, Shares, KeyHash> totals_;
 };
 
 }  // namespace fh

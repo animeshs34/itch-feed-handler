@@ -21,6 +21,7 @@ add_executable(fh_tests
   test_properties.cpp
   test_messages.cpp
   test_arbiter.cpp
+  test_flat_map.cpp
   test_sequencer_order.cpp
   test_sequencer_gaps.cpp
   test_sequencer_tail.cpp

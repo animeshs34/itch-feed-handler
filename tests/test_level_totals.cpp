@@ -39,7 +39,8 @@ TEST_CASE("levels are ordered by side then price", "[levels]") {
   levels.add({fh::Side::Sell, 90}, 1);
   levels.add({fh::Side::Buy, 120}, 1);
   levels.add({fh::Side::Buy, 100}, 1);
-  auto it = levels.all().begin();
+  const auto sorted = levels.all();  // all() builds a fresh sorted copy
+  auto it = sorted.begin();
   REQUIRE(it->first == fh::LevelKey{fh::Side::Buy, 100});
   ++it;
   REQUIRE(it->first == fh::LevelKey{fh::Side::Buy, 120});
