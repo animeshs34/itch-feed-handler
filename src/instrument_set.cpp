@@ -5,9 +5,9 @@
 namespace fh {
 
 InstrumentState& InstrumentSet::get_or_create(InstrumentId id, std::vector<Output>& out) {
-  auto it = states_.find(id);
-  if (it != states_.end()) return it->second;
-  it = states_.emplace(id, InstrumentState(id, global_need_, config_)).first;
+  if (InstrumentState* known = index_[id]) return *known;
+  const auto it = states_.emplace(id, InstrumentState(id, global_need_, config_)).first;
+  index_[id] = &it->second;
   out.emplace_back(InstrumentHealthChange{id, it->second.health()});
   return it->second;
 }
