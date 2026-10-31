@@ -64,3 +64,44 @@ TEST_CASE("a window of zero forgets everything below the expected number", "[arb
   REQUIRE(arbiter.remembered() == 0);
   REQUIRE(arbiter.observe(2, 1) == Verdict::DuplicateUnverified);
 }
+
+TEST_CASE("a number far beyond the ring is remembered and joins the ring when the floor arrives",
+          "[arbiter]") {
+  fh::Arbiter arbiter(4);
+  const fh::Seq far = 1'000'000;  // far past anything the ring reaches
+  REQUIRE(arbiter.observe(far, 7) == Verdict::New);
+  REQUIRE(arbiter.observe(far, 7) == Verdict::Duplicate);
+  REQUIRE(arbiter.observe(far, 8) == Verdict::Mismatch);
+  REQUIRE(arbiter.remembered() == 1);
+
+  arbiter.advance(far - 1);  // the floor is now close enough for the ring to take it
+  REQUIRE(arbiter.remembered() == 1);
+  REQUIRE(arbiter.observe(far, 7) == Verdict::Duplicate);
+  REQUIRE(arbiter.observe(far, 8) == Verdict::Mismatch);
+
+  arbiter.advance(far + 100);  // and later it is forgotten like any other
+  REQUIRE(arbiter.remembered() == 0);
+  REQUIRE(arbiter.observe(far, 7) == Verdict::DuplicateUnverified);
+}
+
+TEST_CASE("a slot is reused cleanly after its old number is forgotten", "[arbiter]") {
+  fh::Arbiter arbiter(2);
+  // Walk far enough that every ring slot is reused many times over.
+  for (fh::Seq s = 1; s <= 10'000; ++s) {
+    REQUIRE(arbiter.observe(s, s) == Verdict::New);
+    arbiter.advance(s + 1);
+    REQUIRE(arbiter.remembered() <= 3);
+  }
+  REQUIRE(arbiter.observe(10'000, 10'000) == Verdict::Duplicate);
+  REQUIRE(arbiter.observe(10'000, 1) == Verdict::Mismatch);
+  REQUIRE(arbiter.observe(9'000, 9'000) == Verdict::DuplicateUnverified);
+}
+
+TEST_CASE("a jump of the expected number forgets everything older in one step", "[arbiter]") {
+  fh::Arbiter arbiter(10);
+  for (fh::Seq s = 1; s <= 50; ++s) REQUIRE(arbiter.observe(s, s) == Verdict::New);
+  arbiter.advance(1'000'000);
+  REQUIRE(arbiter.remembered() == 0);
+  REQUIRE(arbiter.observe(50, 50) == Verdict::DuplicateUnverified);
+  REQUIRE(arbiter.observe(999'995, 1) == Verdict::New);
+}
